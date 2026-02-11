@@ -1,83 +1,91 @@
 /**
- * Product compatibility helpers (blacklist, bidirectional).
- * A product with optional incompatibleWith is invalid if:
- * (1) Direct: for any part in its incompatibleWith, the current selection is in the forbidden list.
- * (2) Reverse: any already-selected product has incompatibleWith[productPartId] containing this product's id.
- * Missing selection for a part is treated as compatible (user can select this product first).
+ * Product compatibility via central INCOMPATIBILITIES list (bidirectional).
+ * Each pair is entered once; the check is symmetric (both IDs in effective selection = incompatible).
  */
 
+import { INCOMPATIBILITIES } from "../data/parts";
+
 /**
- * @param {Object} product - Product with optional incompatibleWith: { [partId]: forbiddenProductIds[] }
- * @param {Object} selectionsByPartId - Current selections: partId -> selected product object (with id, name, incompatibleWith)
- * @param {string} productPartId - Part this product belongs to (for reverse check)
+ * Build set of selected product IDs as if the candidate product were selected.
+ * @param {Object} selectionsByPartId - Current selections: partId -> product
+ * @param {Object} product - Candidate product (with id)
+ * @param {string} productPartId - Part the candidate belongs to
+ * @returns {Set<string>}
+ */
+function getEffectiveSelectionIds(selectionsByPartId, product, productPartId) {
+  const ids = new Set();
+  for (const partId of Object.keys(selectionsByPartId)) {
+    const selected =
+      partId === productPartId ? product : selectionsByPartId[partId];
+    if (selected?.id) ids.add(selected.id);
+  }
+  if (product?.id && !ids.has(product.id)) ids.add(product.id);
+  return ids;
+}
+
+/**
+ * Find part label and product name for a product ID.
+ * @param {Array} parts - PARTS array
+ * @param {string} productId
+ * @returns {{ partLabel: string, productName: string } | null}
+ */
+function getProductLabel(parts, productId) {
+  if (!parts) return null;
+  for (const part of parts) {
+    const product = part.products?.find((p) => p.id === productId);
+    if (product)
+      return { partLabel: part.label, productName: product.name };
+  }
+  return null;
+}
+
+/**
+ * @param {Object} product - Candidate product (with id)
+ * @param {Object} selectionsByPartId - Current selections: partId -> product
+ * @param {string} productPartId - Part the candidate belongs to
  * @returns {boolean}
  */
 export function isProductCompatible(product, selectionsByPartId, productPartId) {
-  // Direct: product forbids some selections
-  const rules = product.incompatibleWith;
-  if (rules && typeof rules === 'object') {
-    for (const partId of Object.keys(rules)) {
-      const forbiddenIds = rules[partId];
-      const selected = selectionsByPartId[partId];
-      if (!selected) continue;
-      if (Array.isArray(forbiddenIds) && forbiddenIds.includes(selected.id)) return false;
-    }
+  const selectedIds = getEffectiveSelectionIds(
+    selectionsByPartId,
+    product,
+    productPartId
+  );
+  for (const [idA, idB] of INCOMPATIBILITIES) {
+    if (selectedIds.has(idA) && selectedIds.has(idB)) return false;
   }
-
-  // Reverse: some selection forbids this product (in product's part)
-  if (productPartId) {
-    for (const partId of Object.keys(selectionsByPartId)) {
-      const selected = selectionsByPartId[partId];
-      const selectedRules = selected?.incompatibleWith;
-      if (!selectedRules || typeof selectedRules !== 'object') continue;
-      const forbiddenIds = selectedRules[productPartId];
-      if (Array.isArray(forbiddenIds) && forbiddenIds.includes(product.id)) return false;
-    }
-  }
-
   return true;
 }
 
 /**
- * @param {Object} product - Product with optional incompatibleWith
+ * @param {Object} product - Candidate product
  * @param {Object} selectionsByPartId - Current selections
  * @param {Array} parts - PARTS array (each has id, label, products: [{ id, name }])
- * @param {string} productPartId - Part this product belongs to (for reverse check)
+ * @param {string} productPartId - Part the candidate belongs to
  * @returns {string|null} - Reason string or null if compatible
  */
-export function getIncompatibilityReason(product, selectionsByPartId, parts, productPartId) {
-  if (isProductCompatible(product, selectionsByPartId, productPartId)) return null;
+export function getIncompatibilityReason(
+  product,
+  selectionsByPartId,
+  parts,
+  productPartId
+) {
+  if (isProductCompatible(product, selectionsByPartId, productPartId))
+    return null;
 
-  const partsById = new Map((parts || []).map((p) => [p.id, p]));
+  const selectedIds = getEffectiveSelectionIds(
+    selectionsByPartId,
+    product,
+    productPartId
+  );
   const reasons = [];
-
-  // Direct: product forbids current selection
-  const rules = product.incompatibleWith;
-  if (rules && typeof rules === 'object') {
-    for (const partId of Object.keys(rules)) {
-      const forbiddenIds = rules[partId];
-      const selected = selectionsByPartId[partId];
-      if (!selected || !Array.isArray(forbiddenIds) || !forbiddenIds.includes(selected.id)) continue;
-      const part = partsById.get(partId);
-      const partLabel = part ? part.label : partId;
-      reasons.push(`${partLabel}: ${selected.name}`);
-    }
+  for (const [idA, idB] of INCOMPATIBILITIES) {
+    if (!selectedIds.has(idA) || !selectedIds.has(idB)) continue;
+    const otherId = product.id === idA ? idB : idA;
+    const label = getProductLabel(parts, otherId);
+    if (label)
+      reasons.push(`${label.partLabel}: ${label.productName}`);
   }
-
-  // Reverse: some selection forbids this product
-  if (productPartId) {
-    for (const partId of Object.keys(selectionsByPartId)) {
-      const selected = selectionsByPartId[partId];
-      const selectedRules = selected?.incompatibleWith;
-      if (!selectedRules || typeof selectedRules !== 'object') continue;
-      const forbiddenIds = selectedRules[productPartId];
-      if (!Array.isArray(forbiddenIds) || !forbiddenIds.includes(product.id)) continue;
-      const part = partsById.get(partId);
-      const partLabel = part ? part.label : partId;
-      reasons.push(`${partLabel}: ${selected.name}`);
-    }
-  }
-
   if (reasons.length === 0) return null;
-  return `Not selectable: incompatible with ${reasons.join('; ')}`;
+  return `Not selectable: incompatible with ${reasons.join("; ")}`;
 }

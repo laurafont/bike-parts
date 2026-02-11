@@ -126,11 +126,17 @@ export const PARTS = [
         description: "Fixed gear for a direct, simple ride.",
         image: "/images/piñon-fijo.jpg",
         price: 69,
-        incompatibleWith: {
-          cuadro: ["cuadro-pull-suspension"],
-          "tipo-rueda": ["rueda-montana", "rueda-fat-wheel"],
-        },
       },
     ],
   },
+];
+
+/**
+ * Pairs of product IDs that cannot be selected together.
+ * Each pair is entered once; compatibility check is symmetric (works both ways).
+ */
+export const INCOMPATIBILITIES = [
+  ["cuadro-pull-suspension", "cambio-pinon-fijo"],
+  ["rueda-montana", "cambio-pinon-fijo"],
+  ["rueda-fat-wheel", "cambio-pinon-fijo"],
 ];

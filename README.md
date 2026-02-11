@@ -1,19 +1,20 @@
 # Bicycle Parts Configurator
 
-A single-page application (SPA) that lets users configure a bicycle by choosing one product per part category, then see a preview and total price.
+A single-page application (SPA) that lets users configure a bicycle by choosing one product per part category, then see a preview and total price. The app title is **Configura tu bicicleta**.
 
 ## App Features
 
 ### Layout
-- **Two-column layout**: Left column shows bicycle parts; right column shows the summary and preview.
-- **Parts list**: Each part is shown as a section with a header (part label + selected product thumbnail or “Por favor selecciona un producto”) and a list of products.
+- **Parts in rows**: Each part category is shown as a full-width card, stacked vertically. Part titles are **numbered** (e.g. 1. Cuadro, 2. Acabado cuadro).
+- **Part card**: Header with part label, selected product thumbnail (or “Por favor selecciona un producto”), and a list of products to choose from.
+- **Summary and preview**: Below the parts, a row shows the **Final price** summary and (after calculating) the **Tu bicicleta** preview image.
 
 ### Part categories and products
-- **Cuadro** (frame): Diamond, Pull suspension, Step through  
-- **Acabado cuadro** (frame finish): Brillo, Mate  
-- **Tipo rueda** (wheel type): Carretera, Montaña, Fat wheel  
-- **Color rueda** (wheel color): Negro, Rojo, Azul  
-- **Tipo cambio** (gearing): 6 velocidades, Piñón fijo  
+- **1. Cuadro** (frame): Diamond, Pull suspension, Step through  
+- **2. Acabado cuadro** (frame finish): Brillo, Mate  
+- **3. Tipo rueda** (wheel type): Carretera, Montaña, Fat wheel  
+- **4. Color rueda** (wheel color): Negro, Rojo, Azul  
+- **5. Tipo cambio** (gearing): 6 velocidades, Piñón fijo  
 
 Each product has a **name**, **description**, **image**, and **price**.
 
@@ -27,11 +28,11 @@ Each product has a **name**, **description**, **image**, and **price**.
 
 ### Compatibility rules
 - Some products are **incompatible** with others (e.g. Piñón fijo with Pull suspension frame or Montaña/Fat wheel).
+- Rules are stored in a **central list** in `src/data/parts.js`: **`INCOMPATIBILITIES`** is an array of pairs of product IDs that cannot be selected together (e.g. `["cuadro-pull-suspension", "cambio-pinon-fijo"]`). Each pair is entered **once**; the check is **bidirectional** (works both ways automatically).
 - Incompatible options are **disabled** in the list; hovering shows a tooltip with the reason (e.g. “Not selectable: incompatible with …”).
-- Checks are **bidirectional**: disabling applies when either the current product forbids a selection or an existing selection forbids the current product.
 
 ### Preview
-- **Combo image**: When the calculated price is shown, a preview image is displayed based on the current selection (frame + finish + wheel type + color + gearing).
+- **Tu bicicleta**: When the calculated price is shown, a preview image is displayed based on the current selection (frame + finish + wheel type + color + gearing).
 - Image path is built from product slugs (e.g. `diamond--brillo--carretera--negro--6-velocidades.webp`). Missing or invalid combo images fall back to a default image.
 
 ### Persistence
@@ -40,10 +41,10 @@ Each product has a **name**, **description**, **image**, and **price**.
 - Keys: `bike-parts-selections`, `bike-parts-show-calculated`.
 
 ### Technical notes
-- **React** SPA (Create React App).
-- Data: `src/data/parts.js` (parts and products with optional `incompatibleWith` and `comboSlug`).
-- Utils: `src/utils/compatibility.js` (compatibility checks and reason messages), `src/utils/comboImage.js` (combo image path and default).
-- Components: `Parts` (parts + product lists), `Summary` (final price, list, total, actions), `Preview` (combo image).
+- **React** SPA (Create React App, React 19).
+- **Data** (`src/data/parts.js`): **`PARTS`** (part categories and products with id, name, description, image, price); **`INCOMPATIBILITIES`** (array of `[productIdA, productIdB]` pairs). Products do not store compatibility rules.
+- **Utils**: `src/utils/compatibility.js` (uses `INCOMPATIBILITIES` for symmetric compatibility check and reason messages), `src/utils/comboImage.js` (combo image path and default).
+- **Components**: `Parts` (numbered part cards and product lists), `Summary` (final price, list, total, actions), `Preview` (Tu bicicleta combo image).
 
 ---
 

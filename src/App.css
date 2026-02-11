@@ -16,6 +16,12 @@
   font-weight: 600;
 }
 
+.App-header h1 span {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #ccc;
+}
+
 .App-layout {
   display: flex;
   flex-direction: column;
