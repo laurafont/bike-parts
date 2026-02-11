@@ -13,13 +13,14 @@ function Parts({
   return (
     <div className="parts-wrapper">
       <div className="parts">
-        {parts.map((part) => {
+        {parts.map((part, index) => {
           const selectedProduct = selectionsByPartId[part.id];
-          console.log(selectedProduct);
           return (
             <div key={part.id} className="parts-item">
               <div className="parts-header">
-                <div className="parts-part-label">{part.label}</div>
+                <div className="parts-part-label">
+                  {index + 1}. {part.label}
+                </div>
                 {selectedProduct && (selectedProduct?.image ?? part.image) ? (
                   <img
                     src={selectedProduct?.image ?? part.image}
