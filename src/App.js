@@ -104,7 +104,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Bicycle parts</h1>
+        <h1>Bicycle parts - Configura tu bicicleta</h1>
       </header>
       <div className="App-layout">
         <div className="App-top">

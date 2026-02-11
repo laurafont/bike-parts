@@ -19,6 +19,7 @@ function Preview({ selectionsByPartId, parts = PARTS }) {
 
   return (
     <div className="preview">
+      <h3 className="preview-title">Tu bicicleta</h3>
       <img
         src={imageSrc}
         alt="Preview of selected bicycle"
